@@ -40,7 +40,7 @@ for i in range(transition_matrix_num):
     hour_data[hour_data < 0] = 0
     hour_data[hour_data > state_num-2] = state_num-1
     m = transition_matrix(hour_data, state_num)
-    np.savetxt(os.path.join(RESULTS_DIRECTORY,'hour'+str(i)+".csv"), m, delimiter = ',')
+    np.savetxt(os.path.join(RESULTS_DIRECTORY,'matrix'+str(i)+".csv"), m, delimiter = ',')
 
 stop = timeit.default_timer()
 
