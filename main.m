@@ -1,6 +1,7 @@
 cd 'C:\Users\wenmi\Desktop\MarkovESValuation'
 load('RTP_NYC_2010_2019.mat')
 Ts = 1/12; % time step
+Tp = 24/Ts; % number of timepoint
 DD = 365; % select days to look back
 lambda = reshape(RTP(:,(end-DD):end),numel(RTP(:,(end-DD):end)),1); 
 T = numel(lambda); % number of time steps
@@ -38,10 +39,15 @@ vEnd(1:floor(ef*100)) = 1e2; % use 100 as the penalty for final discharge level
 
 %%
 tic
-v = zeros(Ne, T+1, N); % initialize the value function series
+v = zeros(Ne, Tp+1); % initialize the value function series
 % v(1,1) is the marginal value of 0% SoC at the beginning of day 1
 % V(Ne, T) is the maringal value of 100% SoC at the beginning of the last operating day
-v(:,end,:) = vEnd; % update final value function
+v(:,end) = vEnd; % update final value function
+
+C = cell(1, N); % initialize the value function cell for N price nodes
+for i = 1:N
+   C{i} = v;
+end
 
 % process index
 es = (0:ed:1)';
@@ -59,7 +65,7 @@ iD = floor(eD/ed)+1;
 iD(iD > (Ne+1)) = Ne + 2;
 iD(iD < 2) = 1;
 
-for t = T:-1:1 % start from the last day and move backwards
+for t = Tp:-1:1 % start from the last timepoint and move backwards
     %choose transition matrix for timepoint t
     if mod(ceil(t*Ts), totalMatrices) == 0
         tM = M(:,:,totalMatrices); %when mod=0, use last transition matrix
@@ -70,25 +76,25 @@ for t = T:-1:1 % start from the last day and move backwards
     for i = 1:N
         viE = 0;
         for j = 1:N
-            vi = v(:,t+1,j); % input value function from next timepoint at price node j
+            vi = C{j}(:,t+1); % input value function from next timepoint at price node j
             viE = viE + tM(i,j) * vi; % calculate expected value function from next timepoint at price node i
         end
         lambdaNode = (i-1) *10; % calculate expected price at price node i
         vo = CalcValueNoUnc(lambdaNode, c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
-        v(:,t,i) = vo; % record the result 
+        C{i}(:,t) = vo; % record the result 
     end
 end
 
 tElasped = toc;
 
 %% convert value function to 5 segments
-vAvg = zeros(5,T+1);
+%vAvg = zeros(5,T+1);
 
-NN = (Ne-1)/5;
+%NN = (Ne-1)/5;
 
-for i = 1:5
-   vAvg(i,:) = mean(v((i-1)*NN + (1:(NN+1)),:)); 
-end
+%for i = 1:5
+%   vAvg(i,:) = mean(v((i-1)*NN + (1:(NN+1)),:)); 
+%end
 
 
 %% perform the actual arbitrage
@@ -102,9 +108,14 @@ for t = 1:T % start from the first day and move forwards
     if lambda(t) < 0
         i = int16(1);
     elseif lambda(t) >= 200
-        i = int(22);
+        i = int16(22);
     end
-    vv = v(:,t+1,i); % read the SoC value for this day
+    tp = mod(t,int16(Tp));
+    if tp == 0
+        vv = C{i}(:,Tp+1);
+    else
+        vv = C{i}(:,tp+1); % read the SoC value for this day
+    end
    [e, p] =  Arb_Value(lambda(t), vv, e, P, 1, eta, c, size(v,1));
    eS(t) = e; % record SoC
    pS(t) = p; % record Power
