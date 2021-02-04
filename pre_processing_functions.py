@@ -30,6 +30,7 @@ class DirStructure(object):
         self.RESULTS_DIRECTORY_W = os.path.join(self.RESULTS_DIRECTORY + "\\" + "Winter")
         self.RESULTS_DIRECTORY_SF = os.path.join(self.RESULTS_DIRECTORY + "\\" + "Spring_Fall")
         self.RESULTS_DIRECTORY_Y = os.path.join(self.RESULTS_DIRECTORY + "\\" + "Year")
+        self.RESULTS_DIRECTORY_N = os.path.join(self.RESULTS_DIRECTORY + "\\" + "Null")
 
     def make_directories(self):
         """create any directories that don't already exist (applies only to output directories)
@@ -44,6 +45,8 @@ class DirStructure(object):
             os.mkdir(self.RESULTS_DIRECTORY_SF)
         if not os.path.exists(self.RESULTS_DIRECTORY_Y):
             os.mkdir(self.RESULTS_DIRECTORY_Y)
+        if not os.path.exists(self.RESULTS_DIRECTORY_N):
+            os.mkdir(self.RESULTS_DIRECTORY_N)
 
 # class for loading RTP case data
 
@@ -77,6 +80,16 @@ def transition_matrix(df, state_num):
         s = sum(row)
         if s > 0:
             row[:] = [f/s for f in row]
+    return M
+
+def null_transition_matrix(df, state_num):
+    num = df._get_numeric_data()
+    n = state_num
+    s = num.shape[0]*num.shape[1]
+    M = [[0]*n for _ in range(n)]
+    for i, j in ((a,b) for a in range(n) for b in range(n)):
+        f = num[num==i].count().sum()
+        M[j][i] = f/s
     return M
 
 def write_matrix_case(kw_dict, start, end, dir_structure, **kwargs):
@@ -141,6 +154,8 @@ def write_matrix_case(kw_dict, start, end, dir_structure, **kwargs):
         else:
             rtp_sf = rtp_sf.append(rtp[rtp['date'].map(lambda x: x.month) == m])
 
+    m_n = null_transition_matrix(rtp, sn) #create null transition matrices, which means price independent from previous timespoint
+
     for i in range(mn):
         t1 = i*ts
         t2 = (i+1)*ts
@@ -157,6 +172,9 @@ def write_matrix_case(kw_dict, start, end, dir_structure, **kwargs):
         np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_W,'matrix'+str(i)+".csv"), m_w, delimiter = ',')
         np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_S,'matrix'+str(i)+".csv"), m_s, delimiter = ',')
         np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SF,'matrix'+str(i)+".csv"), m_sf, delimiter = ',')
+        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_N,'matrix'+str(i)+".csv"), m_n, delimiter = ',')
+
+    np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_N,'matrix'+str(i)+".csv"), m_n, delimiter = ',')
 
     print("...completed creating case transition matrices!")
     return None

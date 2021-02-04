@@ -1,4 +1,4 @@
-cd 'C:\Users\wenmi\Desktop\MarkovESValuation'
+baseFolder = cd('C:\Users\wenmi\Desktop\MarkovESValuation\RTP_data');
 load('RTP_NYC_2010_2019.mat')
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
@@ -9,7 +9,15 @@ N = 22; %number of states
 G = 10; %state gap
 
 %% load transition matrices
-oldFolder = cd('C:\Users\wenmi\Desktop\MarkovESValuation\transition_matrix'); %transition matrix folder (will add argument for diff scenario)
+pindep = 1; % price independent, 1 -> True, 0 -> False
+pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False, not set yet
+
+if pindep == 1
+    cd('C:\Users\wenmi\Desktop\MarkovESValuation\transition_matrix\NYC_2010_2011\Null'); 
+elseif pindep == 0
+    cd('C:\Users\wenmi\Desktop\MarkovESValuation\transition_matrix\NYC_2010_2011\Year');
+end
+
 matrices = dir('*');
 matrices(1:2) = [];
 totalMatrices = numel(matrices); %total matrices number
@@ -20,8 +28,7 @@ for s = 1:totalMatrices % load all matrices
     M(:,:,s) = readmatrix(join(['matrix',sprintf('%d',s-1),'.csv']));
 end
 
-cd(oldFolder)
-
+cd(baseFolder)
 %%
 Pr = .5; % normalized power rating wrt energy rating
 P = Pr*Ts; % actual power rating taking time step size into account
@@ -122,4 +129,24 @@ for t = 1:T % start from the first day and move forwards
 end
 
 ProfitOut = sum(pS.*lambda) - sum(c*pS(pS>0));
+
 solTimeOut = toc;
+
+%% save figures
+if pindep == 1
+    cd('C:\Users\wenmi\Desktop\MarkovESValuation\figures\Null'); 
+elseif pindep == 0
+    cd('C:\Users\wenmi\Desktop\MarkovESValuation\figures\Year');
+end
+
+for i = 1:N
+    h = heatmap(C{i});
+    h.GridVisible = 'off';
+    h.Title = {'price node', num2str(i), 'SoC value'};
+    h.XLabel = 'Sizes';
+    h.YLabel = 'Colors';
+    xlabel('time')
+    ylabel('SoC')
+    saveas(h,sprintf('FIG%d%d.png',pindep,i))
+end
+cd(baseFolder)
