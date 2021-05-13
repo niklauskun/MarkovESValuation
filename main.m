@@ -7,15 +7,15 @@ DD = 365; % select days to look back
 lastDay = datetime(2019,12,31);
 lambda = reshape(RTP(:,(end-DD):end),numel(RTP(:,(end-DD):end)),1); 
 T = numel(lambda); % number of time steps
-N = 22; %number of states
-G = 10; %state gap
+N = 22; % number of states
+G = 10; % state gap
 
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
-pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False, not set yet
-pweek = 1; % price week pattern, 1 -> True, 0 -> False, not set yet
+pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False
+pweek = 1; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2016;
+start = 2018;
 stop = 2018;
 location = 'NYC';
 
@@ -60,12 +60,12 @@ else
 end
 
 %%
-Pr = 1/6; % normalized power rating wrt energy rating
+Pr = .5; % normalized power rating wrt energy rating
 P = Pr*Ts; % actual power rating taking time step size into account
 eta = .9; % efficiency
 c = 10; % marginal discharge cost - degradation
 ed = .001; % SoC sample granularity
-ef = .0; % final SoC target level, use 0 if none
+ef = .5; % final SoC target level, use 0 if none
 Ne = floor(1/ed)+1; % number of SOC samples
 e0 = .5;
 
@@ -291,6 +291,8 @@ elseif pindep == 0 && pseason == 1 && pweek == 1
             (idivide(lambda(t),int32(G)) + 2) * int32(lambda(t) >= 0 && lambda(t) < 200); %get price node i from lambda(t)
         tp = mod(t,int32(Tp));    
         date = lastDay - days((ceil((T-t+1)/(T/(DD+1))) - 1));
+        year_start = datetime(year(date),1,1);
+        day = days(date - year_start) + 1;
         vv = (isweekend(date) == 0 && (124 <= day && day <= 284)) * (C1{i}(:,Tp+1) * (tp == 0) + C1{i}(:,tp+1) * (tp ~= 0))...
             +(isweekend(date) == 1 && (124 <= day && day <= 284)) * (C2{i}(:,Tp+1) * (tp == 0) + C2{i}(:,tp+1) * (tp ~= 0))...
             +(isweekend(date) == 0 && (124 > day || day > 284)) * (C3{i}(:,Tp+1) * (tp == 0) + C3{i}(:,tp+1) * (tp ~= 0))...
@@ -313,9 +315,12 @@ else
 end
 
 ProfitOut = sum(pS.*lambda) - sum(c*pS(pS>0));
+Revenue = sum(pS.*lambda);
+
+fprintf('Profit=%e, revenue=%e',ProfitOut, Revenue)
 
 solTimeOut = toc;
-save()
+% save()
 
 %% save figures
 %if pindep == 1

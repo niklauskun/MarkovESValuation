@@ -9,15 +9,18 @@ from pre_processing_functions import write_matrix_case
 # inputs for running
 folder_path = os.path.join(os.environ["HOMEPATH"], "Desktop")
 code_folder_path = "MarkovESValuation"
-start = datetime.datetime.strptime("01-01-2018", "%m-%d-%Y")  # day case starts on, (needs to be greater than 02-29-2016, due to the leap year)
+start = datetime.datetime.strptime("01-01-2016", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to the two days missing in MAR 2021)
 end = datetime.datetime.strptime("12-31-2018", "%m-%d-%Y")  # day case ends on
 RTP_file = "RTP_WEST_2010_2019.mat"
+DAP_file = "DAP_WEST_2010_2019.mat"
+DABias = True
 
 # create a file structure object
 f = DirStructure(
     folder_path, 
     code_folder=code_folder_path, 
-    input_folder="RTP_data", 
+    RTP_folder="RTP_data", 
+    DAP_folder="DAP_data", 
     results_folder="transition_matrix", 
     RTP_file = RTP_file,
     t1 = start, 
@@ -28,7 +31,7 @@ f.make_directories()
 
 # load input data
 data_class = LoadInputData(f)
-kw_dict = data_class.load_input_data(RTP_file)
+kw_dict = data_class.load_input_data(RTP_file, DAP_file)
 
 # write transition matrice for cases
 optional_kwargs = {
@@ -37,7 +40,9 @@ optional_kwargs = {
     "time_step": 12, # slices in one hour
     "price_bar": 200, # price greater than price bar is price spike
     "state_gap": 10, # state gap
+    "bias_bar": 50, # bias greater than 50 is gournded to 50 (smaller than -50 is grounded to -50)
+    "bias_gap": 5, # bias state gap
     "matrix_num": 24,
 }
 
-write_matrix_case(kw_dict, start, end, f, RTP_file, **optional_kwargs)
+write_matrix_case(kw_dict, start, end, f, RTP_file, DABias, **optional_kwargs)

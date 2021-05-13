@@ -14,14 +14,14 @@ vF = v; % read the value function
 if iE < N
     vF((iE+1):end) = vF((iE+1):end)*eta; % charge efficiency
 elseif iE > 1
-    vF(1:(iE-1)) = (vF(1:(iE-1))+c)/eta; % discharge efficiency
+    vF(1:(iE-1)) = (vF(1:(iE-1)))/eta + c ; % discharge efficiency
 end
 
 % charge index
 iC = find(vF >= lambda, 1, 'last');
 
 % discharge index
-iD = find(vF <= lambda, 1, 'first');
+iD = find(vF <= lambda-c, 1, 'first');
 
 % iF = iC*(iC > iE) + iD*(iD < iE) + iE*(iC <= iE)*(iD >= iE);
 if iC > iE

@@ -14,15 +14,17 @@ class DirStructure(object):
         self,
         code_directory,
         code_folder="MarkovESValuation",
-        input_folder="RTP_data",
+        RTP_folder="RTP_data",
+        DAP_folder="DAP_data",
         results_folder="transition_matrix",
         RTP_file = "RTP_NYC_2010_2019.mat",
-        t1 = datetime.datetime.strptime("01-01-2010", "%m-%d-%Y"),
-        t2 = datetime.datetime.strptime("01-01-2011", "%m-%d-%Y"),
+        t1 = datetime.datetime.strptime("01-01-2018", "%m-%d-%Y"),
+        t2 = datetime.datetime.strptime("01-31-2018", "%m-%d-%Y"),
     ):
         self.BASE_DIRECTORY = code_directory
         self.MESV_DIRECTORY = os.path.join(self.BASE_DIRECTORY, code_folder)
-        self.RTP_DIRECTORY = os.path.join(self.MESV_DIRECTORY, input_folder)
+        self.RTP_DIRECTORY = os.path.join(self.MESV_DIRECTORY, RTP_folder)
+        self.DAP_DIRECTORY = os.path.join(self.MESV_DIRECTORY, DAP_folder)
         self.RESULTS_DIRECTORY = os.path.join(
             self.MESV_DIRECTORY, results_folder + "\\" + re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(t1.year) + "_" + str(t2.year)
         )
@@ -79,7 +81,7 @@ class LoadInputData(object):
         self.f = f
         self.input_dict = {}
 
-    def load_input_data(self, RTP_file):
+    def load_input_data(self, RTP_file, DAP_file):
         """
         Arguments:
             f {class(DirStructure)} -- a folder directory for the case. Needs pointer to input data
@@ -88,6 +90,7 @@ class LoadInputData(object):
         """
         ## NREL SourceData folder imports ##
         self.input_dict["RTP"] = pd.DataFrame(loadmat(os.path.join(self.f.RTP_DIRECTORY, RTP_file))['RTP']).T
+        self.input_dict["DAP"] = pd.DataFrame(loadmat(os.path.join(self.f.DAP_DIRECTORY, DAP_file))['DAP']).T
         print("...completed load data")
         return self.input_dict
 
@@ -116,7 +119,7 @@ def null_transition_matrix(df, state_num):
         M[j][i] = f/s
     return M
 
-def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, **kwargs):
+def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, DABias, **kwargs):
     zero_day = datetime.datetime.strptime("01-01-2010", "%m-%d-%Y")
     max_day = datetime.datetime.strptime("01-01-2020", "%m-%d-%Y")
     # some checks
@@ -156,85 +159,170 @@ def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, **kwargs):
         print("NOTE: no state_gap, add state_gap based on default behavior")
         sg = 10
     try:
+        bb = kwargs["bias_bar"]
+    except KeyError:
+        print("NOTE: no bias_bar, add bias_bar based on default behavior")
+        bb = 50
+    try:
+        bg = kwargs["bias_gap"]
+    except KeyError:
+        print("NOTE: no bias_gap, add bias_gap based on default behavior")
+        bg = 10
+    try:
         mn = kwargs["matrix_num"]
     except KeyError:
         print("NOTE: no matrix_num, add matrix_num based on default behavior")
         mn = 24
 
     sn = pb//sg + 2 # state number
-    rtp = kw_dict['RTP'].loc[(start - zero_day).days - 2 : (end - zero_day).days - 2,:].copy() #slicing RTP data, -2 because 2 leap days in 2012 and 2016 were ignored
+    bn = bb//bg * 2 + 1 # bias state number
+    rtp = kw_dict['RTP'].loc[(start - zero_day).days - 2 : (end - zero_day).days - 2, :].copy().reset_index(drop=True) #slicing RTP data, -2 because 2 days missing in 2011 (MAR 01 an 02)
+    dap = kw_dict['DAP'].loc[(start - zero_day).days : (end - zero_day).days, :].copy().reset_index(drop=True)
+    bias = rtp - dap
+    bias = (bias//bg+1).astype(int)
+    bias[bias < -bb//bg] = -bb//bg
+    bias[bias > bb//bg] = bb//bg
+    bias['date'] = pd.date_range(start, end)
     rtp = (rtp//sg+1).astype(int)
     rtp[rtp < 0] = 0
     rtp[rtp > sn - 2] = sn - 1
     rtp['date'] = pd.date_range(start, end)
-    rtp_summer = pd.DataFrame(columns=list(rtp)) # initialize summer RTP data
-    rtp_nsummer = pd.DataFrame(columns=list(rtp)) # initialize non-summer RTP data
-    rtp_weekday = pd.DataFrame(columns=list(rtp)) # initialize weekday RTP data
-    rtp_weekend = pd.DataFrame(columns=list(rtp)) # initialize weekend RTP data
-    rtp_sweekday = pd.DataFrame(columns=list(rtp)) # initialize summer weekday RTP data
-    rtp_sweekend = pd.DataFrame(columns=list(rtp)) # initialize summer weekend RTP data
-    rtp_nsweekday = pd.DataFrame(columns=list(rtp)) # initialize non-summer weekday RTP data
-    rtp_nsweekend = pd.DataFrame(columns=list(rtp)) # initialize non-summer weekend RTP data
 
-    for n in range(rtp.shape[0]):
-        date = rtp.iloc[n]['date']
-        weekday = date.weekday() in [0,1,2,3,4]
-        year_start = datetime.datetime(date.year,1,1)
-        summer = ss - 1 <= (date-year_start).days <= se - 1
-        if weekday == True:
-            rtp_weekday = rtp_weekday.append(rtp.iloc[n])
-            if summer == True:
-                rtp_summer = rtp_summer.append(rtp.iloc[n])
-                rtp_sweekday = rtp_sweekday.append(rtp.iloc[n])
+    if DABias:
+        bias_summer = pd.DataFrame(columns=list(bias)) # initialize summer bias data
+        bias_nsummer = pd.DataFrame(columns=list(bias)) # initialize non-summer bias data
+        bias_weekday = pd.DataFrame(columns=list(bias)) # initialize weekday bias data
+        bias_weekend = pd.DataFrame(columns=list(bias)) # initialize weekend bias data
+        bias_sweekday = pd.DataFrame(columns=list(bias)) # initialize summer weekday bias data
+        bias_sweekend = pd.DataFrame(columns=list(bias)) # initialize summer weekend bias data
+        bias_nsweekday = pd.DataFrame(columns=list(bias)) # initialize non-summer weekday bias data
+        bias_nsweekend = pd.DataFrame(columns=list(bias)) # initialize non-summer weekend bias data
+        for n in range(rtp.shape[0]):
+            date = rtp.iloc[n]['date']
+            weekday = date.weekday() in [0,1,2,3,4]
+            year_start = datetime.datetime(date.year,1,1)
+            summer = ss - 1 <= (date-year_start).days <= se - 1
+            if weekday == True:
+                bias_weekday = bias_weekday.append(bias.iloc[n])
+                if summer == True:
+                    bias_summer = bias_summer.append(bias.iloc[n])
+                    bias_sweekday = bias_sweekday.append(bias.iloc[n])
+                else:
+                    bias_nsummer = bias_nsummer.append(bias.iloc[n])
+                    bias_nsweekday = bias_nsweekday.append(bias.iloc[n])
             else:
-                rtp_nsummer = rtp_nsummer.append(rtp.iloc[n])
-                rtp_nsweekday = rtp_nsweekday.append(rtp.iloc[n])
-        else:
-            rtp_weekend = rtp_weekend.append(rtp.iloc[n])
-            if summer == True:
-                rtp_summer = rtp_summer.append(rtp.iloc[n])
-                rtp_sweekend = rtp_sweekend.append(rtp.iloc[n])
+                bias_weekend = bias_weekend.append(bias.iloc[n])
+                if summer == True:
+                    bias_summer = bias_summer.append(bias.iloc[n])
+                    bias_sweekend = bias_sweekend.append(bias.iloc[n])
+                else:
+                    bias_nsummer = bias_nsummer.append(bias.iloc[n])
+                    bias_nsweekend = bias_nsweekend.append(bias.iloc[n])
+        m_n2 = null_transition_matrix(rtp, bn)
+    else:
+        rtp_summer = pd.DataFrame(columns=list(rtp)) # initialize summer RTP data
+        rtp_nsummer = pd.DataFrame(columns=list(rtp)) # initialize non-summer RTP data
+        rtp_weekday = pd.DataFrame(columns=list(rtp)) # initialize weekday RTP data
+        rtp_weekend = pd.DataFrame(columns=list(rtp)) # initialize weekend RTP data
+        rtp_sweekday = pd.DataFrame(columns=list(rtp)) # initialize summer weekday RTP data
+        rtp_sweekend = pd.DataFrame(columns=list(rtp)) # initialize summer weekend RTP data
+        rtp_nsweekday = pd.DataFrame(columns=list(rtp)) # initialize non-summer weekday RTP data
+        rtp_nsweekend = pd.DataFrame(columns=list(rtp)) # initialize non-summer weekend RTP data
+        for n in range(rtp.shape[0]):
+            date = rtp.iloc[n]['date']
+            weekday = date.weekday() in [0,1,2,3,4]
+            year_start = datetime.datetime(date.year,1,1)
+            summer = ss - 1 <= (date-year_start).days <= se - 1
+            if weekday == True:
+                rtp_weekday = rtp_weekday.append(rtp.iloc[n])
+                if summer == True:
+                    rtp_summer = rtp_summer.append(rtp.iloc[n])
+                    rtp_sweekday = rtp_sweekday.append(rtp.iloc[n])
+                else:
+                    rtp_nsummer = rtp_nsummer.append(rtp.iloc[n])
+                    rtp_nsweekday = rtp_nsweekday.append(rtp.iloc[n])
             else:
-                rtp_nsummer = rtp_nsummer.append(rtp.iloc[n])
-                rtp_nsweekend = rtp_nsweekend.append(rtp.iloc[n])
-        # or use lambda? rtp_s = rtp_s.append(rtp[rtp['date'].map(lambda x: x.month) == m])
-    m_n = null_transition_matrix(rtp, sn) #create null transition matrices, which means price independent from previous timespoint
+                rtp_weekend = rtp_weekend.append(rtp.iloc[n])
+                if summer == True:
+                    rtp_summer = rtp_summer.append(rtp.iloc[n])
+                    rtp_sweekend = rtp_sweekend.append(rtp.iloc[n])
+                else:
+                    rtp_nsummer = rtp_nsummer.append(rtp.iloc[n])
+                    rtp_nsweekend = rtp_nsweekend.append(rtp.iloc[n])
+        m_n = null_transition_matrix(rtp, sn) #create null transition matrices, which means price independent from previous timespoint        
+
     
-    print("...RTP subset created")
+    print("...RTP/DAP subset created")
 
-    for i in range(mn):
-        t1 = i*ts
-        t2 = (i+1)*ts
-        slice = rtp.iloc[:,t1:t2]
-        slice_summer = rtp_summer.iloc[:,t1:t2]
-        slice_nsummer = rtp_nsummer.iloc[:,t1:t2]
-        slice_weekday = rtp_weekday.iloc[:,t1:t2]
-        slice_weekend = rtp_weekend.iloc[:,t1:t2]
-        slice_sweekday = rtp_sweekday.iloc[:,t1:t2]
-        slice_sweekend = rtp_sweekend.iloc[:,t1:t2]
-        slice_nsweekday = rtp_nsweekday.iloc[:,t1:t2]
-        slice_nsweekend = rtp_nsweekend.iloc[:,t1:t2]
+    if DABias:
+        for i in range(mn):
+            t1 = i*ts
+            t2 = (i+1)*ts
+            slice2 = bias.iloc[:,t1:t2]
+            slice_summer2 = bias_summer.iloc[:,t1:t2]
+            slice_nsummer2 = bias_nsummer.iloc[:,t1:t2]
+            slice_weekday2 = bias_weekday.iloc[:,t1:t2]
+            slice_weekend2 = bias_weekend.iloc[:,t1:t2]
+            slice_sweekday2 = bias_sweekday.iloc[:,t1:t2]
+            slice_sweekend2 = bias_sweekend.iloc[:,t1:t2]
+            slice_nsweekday2 = bias_nsweekday.iloc[:,t1:t2]
+            slice_nsweekend2 = bias_nsweekend.iloc[:,t1:t2]
 
-        m = transition_matrix(slice, sn)
-        m_s = transition_matrix(slice_summer, sn)
-        m_ns = transition_matrix(slice_nsummer, sn)
-        m_wd = transition_matrix(slice_weekday, sn)
-        m_we = transition_matrix(slice_weekend, sn)
-        m_swd = transition_matrix(slice_sweekday, sn)
-        m_swe = transition_matrix(slice_sweekend, sn)
-        m_nswd = transition_matrix(slice_nsweekday, sn)
-        m_nswe = transition_matrix(slice_nsweekend, sn)
+            m2 = transition_matrix(slice2, bn)
+            m_s2 = transition_matrix(slice_summer2, bn)
+            m_ns2 = transition_matrix(slice_nsummer2, bn)
+            m_wd2 = transition_matrix(slice_weekday2, bn)
+            m_we2 = transition_matrix(slice_weekend2, bn)
+            m_swd2 = transition_matrix(slice_sweekday2, bn)
+            m_swe2 = transition_matrix(slice_sweekend2, bn)
+            m_nswd2 = transition_matrix(slice_nsweekday2, bn)
+            m_nswe2 = transition_matrix(slice_nsweekend2, bn)
 
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_Y, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_year_'+str(i)+".csv"), m, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_S, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_'+str(i)+".csv"), m_s, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_NS, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_'+str(i)+".csv"), m_ns, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_weekday_'+str(i)+".csv"), m_wd, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_weekend_'+str(i)+".csv"), m_we, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_weekday_'+str(i)+".csv"), m_swd, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_weekend_'+str(i)+".csv"), m_swe, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_weekday_'+str(i)+".csv"), m_nswd, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_weekend_'+str(i)+".csv"), m_nswe, delimiter = ',')
-        np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_N, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_null_'+str(i)+".csv"), m_n, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_Y, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_year_'+str(i)+".csv"), m2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_S, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_summer_'+str(i)+".csv"), m_s2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_NS, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_nonsummer_'+str(i)+".csv"), m_ns2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_weekday_'+str(i)+".csv"), m_wd2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_weekend_'+str(i)+".csv"), m_we2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_summer_weekday_'+str(i)+".csv"), m_swd2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_summer_weekend_'+str(i)+".csv"), m_swe2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_nonsummer_weekday_'+str(i)+".csv"), m_nswd2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_nonsummer_weekend_'+str(i)+".csv"), m_nswe2, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_N, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + str(bg) + "_" + 'bias_matrix_null_'+str(i)+".csv"), m_n2, delimiter = ',')
+    else:
+        for i in range(mn):
+            t1 = i*ts
+            t2 = (i+1)*ts
+            slice = rtp.iloc[:,t1:t2]
+            slice_summer = rtp_summer.iloc[:,t1:t2]
+            slice_nsummer = rtp_nsummer.iloc[:,t1:t2]
+            slice_weekday = rtp_weekday.iloc[:,t1:t2]
+            slice_weekend = rtp_weekend.iloc[:,t1:t2]
+            slice_sweekday = rtp_sweekday.iloc[:,t1:t2]
+            slice_sweekend = rtp_sweekend.iloc[:,t1:t2]
+            slice_nsweekday = rtp_nsweekday.iloc[:,t1:t2]
+            slice_nsweekend = rtp_nsweekend.iloc[:,t1:t2]
+
+            m = transition_matrix(slice, sn)
+            m_s = transition_matrix(slice_summer, sn)
+            m_ns = transition_matrix(slice_nsummer, sn)
+            m_wd = transition_matrix(slice_weekday, sn)
+            m_we = transition_matrix(slice_weekend, sn)
+            m_swd = transition_matrix(slice_sweekday, sn)
+            m_swe = transition_matrix(slice_sweekend, sn)
+            m_nswd = transition_matrix(slice_nsweekday, sn)
+            m_nswe = transition_matrix(slice_nsweekend, sn)
+
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_Y, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_year_'+str(i)+".csv"), m, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_S, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_'+str(i)+".csv"), m_s, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SEASON_NS, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_'+str(i)+".csv"), m_ns, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_weekday_'+str(i)+".csv"), m_wd, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_WEEK_WE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_weekend_'+str(i)+".csv"), m_we, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_weekday_'+str(i)+".csv"), m_swd, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_SWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_summer_weekend_'+str(i)+".csv"), m_swe, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWD, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_weekday_'+str(i)+".csv"), m_nswd, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_SW_NSWE, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_nonsummer_weekend_'+str(i)+".csv"), m_nswe, delimiter = ',')
+            np.savetxt(os.path.join(dir_structure.RESULTS_DIRECTORY_N, re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" + 'matrix_null_'+str(i)+".csv"), m_n, delimiter = ',')
+
 
     print("...completed creating case transition matrices!")
     return None
