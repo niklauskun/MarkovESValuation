@@ -6,13 +6,12 @@ using Printf
 using JLD
 
 # High-level Settings
-Zone = "NYC" # price zone name
+Zone = "NORTH" # price zone name
 
 # read price
 fileln = matopen(string("./RTP_data/RTP_",Zone,"_2010_2019.mat"))
 RTP = read(fileln, "RTP")
 close(fileln)
-
 #
 
 E = 1;  # storage energy capacity in MWh
@@ -25,12 +24,12 @@ L = RTP[:,1];
 Lp = L .> 0
 
 # BES setting
-P = .25; # power rating MW
+P = 1; # power rating MW
 # E = 2; # energy rating MWh
 eta = .9; # single-trip efficiency
 e0 = .5 * E;
 ef = e0;
-MC = 0; # marginal discharge cost
+MC = 10; # marginal discharge cost
 
 # initialize optimization model
 model = Model(Gurobi.Optimizer)

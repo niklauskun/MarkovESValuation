@@ -12,10 +12,10 @@ G = 10; % state gap
 
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
-pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False
-pweek = 1; % price week pattern, 1 -> True, 0 -> False
+pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
+pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2018;
+start = 2016;
 stop = 2018;
 location = 'NYC';
 
@@ -304,7 +304,7 @@ elseif pindep == 0 && pseason == 1 && pweek == 1
 else
     for t = 1:T % start from the first day and move forwards
         i = int32(1) * int32(lambda(t) < 0) + ...
-            int32(22) * int32(lambda(t) >= 200) + ...        
+            int32(N) * int32(lambda(t) >= 200) + ...        
             (idivide(lambda(t),int32(G)) + 2) * int32(lambda(t) >= 0 && lambda(t) < 200); %get price node i from lambda(t)
         tp = mod(t,int32(Tp));    
         vv = C{i}(:,Tp+1) * (tp == 0) + C{i}(:,tp+1)* (tp ~= 0);

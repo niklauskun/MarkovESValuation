@@ -179,9 +179,9 @@ def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, DABias, **kw
     rtp = kw_dict['RTP'].loc[(start - zero_day).days - 2 : (end - zero_day).days - 2, :].copy().reset_index(drop=True) #slicing RTP data, -2 because 2 days missing in 2011 (MAR 01 an 02)
     dap = kw_dict['DAP'].loc[(start - zero_day).days : (end - zero_day).days, :].copy().reset_index(drop=True)
     bias = rtp - dap
-    bias = (bias//bg+1).astype(int)
-    bias[bias < -bb//bg] = -bb//bg
-    bias[bias > bb//bg] = bb//bg
+    bias = (bias//bg+5).astype(int)
+    bias[bias < 0] = 0
+    bias[bias > bn-1] = bn-1
     bias['date'] = pd.date_range(start, end)
     rtp = (rtp//sg+1).astype(int)
     rtp[rtp < 0] = 0
@@ -218,7 +218,7 @@ def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, DABias, **kw
                 else:
                     bias_nsummer = bias_nsummer.append(bias.iloc[n])
                     bias_nsweekend = bias_nsweekend.append(bias.iloc[n])
-        m_n2 = null_transition_matrix(rtp, bn)
+        m_n2 = null_transition_matrix(bias, bn)
     else:
         rtp_summer = pd.DataFrame(columns=list(rtp)) # initialize summer RTP data
         rtp_nsummer = pd.DataFrame(columns=list(rtp)) # initialize non-summer RTP data
