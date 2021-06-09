@@ -1,7 +1,7 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-load('RTP_NYC_2010_2019.mat')
-load('DAP_NYC_2010_2019.mat')
+load('RTP_NORTH_2010_2019.mat')
+load('DAP_NORTH_2010_2019.mat')
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
 DD = 365; % select days to look back
@@ -20,7 +20,7 @@ pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
 start = 2016;
 stop = 2018;
-location = 'NYC';
+location = 'NORTH';
 
 % load case bias transition matrices
 if pindep == 1
@@ -164,10 +164,10 @@ for d = 1:DD
     Discharge = Discharge+ sum(pS(pS>0));
     fprintf('Day = %d, Profit=%e, revenue=%e, total discharge=%e \n', d, ProfitOut, Revenue, Discharge)
     %% Set final SoC value for next day
-%     vEnd = v(:,:,1);
-%     v = zeros(Ne,Nb,Tp+1);
-%     v(:,:,end) = vEnd;
-%     v(1:floor(ef*100),:,end) = 1e2;
+    vEnd = v(:,:,Tp);
+    v = zeros(Ne,Nb,Tp+1);
+    v(:,:,end) = vEnd;
+    v(1:floor(ef*100),:,end) = 1e2;
 end
 
 solTimeOut = toc;

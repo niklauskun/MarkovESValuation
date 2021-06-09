@@ -66,3 +66,31 @@ for h = 1:totalMatrices
     zero = Nb - nnz(sum(M(:,:,h),2));
     fprintf('All zero transition probability at hour %d = %d \n', h, zero)
 end
+
+
+
+ba = (-50:Gb:50)';
+lambda_DA_m = zeros(T,1);
+for d = 1:DD
+    for t = 1:Tp
+        tp = (d-1)*Tp + t; % current time point
+        tH = ceil((t)*Ts); % current hour
+%         if d == 1 && t == 1
+%             i = int32((Nb-1)/2);
+%         else
+%             i = int32((Nb-1)/2 + ceil(bias(tp-1)/Gb));
+%         end
+        i = int32((Nb-1)/2 + ceil(bias(tp)/Gb));
+        i = max(1,min(Nb,i));
+        eb = M(i,:,tH) * (ba+5);
+        lambda_DA_m(tp) = lambda_DA(tp) + eb;
+    end
+end
+
+bias_m = lambda - lambda_DA_m;
+
+plot(bias(1:2000))
+hold on 
+plot(bias_m(1:2000))
+corrcoef(lambda_DA_m,lambda)
+mean(bias_m)
