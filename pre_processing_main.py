@@ -11,8 +11,8 @@ folder_path = os.path.join(os.environ["HOMEPATH"], "Desktop")
 code_folder_path = "MarkovESValuation"
 start = datetime.datetime.strptime("01-01-2018", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to the two days missing in MAR 2021)
 end = datetime.datetime.strptime("12-31-2018", "%m-%d-%Y")  # day case ends on
-RTP_file = "RTP_NYC_2010_2019.mat"
-DAP_file = "DAP_NYC_2010_2019.mat"
+RTP_file = "RTP_LONGIL_2010_2019.mat"
+DAP_file = "DAP_LONGIL_2010_2019.mat"
 DABias = True
 
 # create a file structure object

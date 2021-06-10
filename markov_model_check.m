@@ -1,7 +1,7 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-load('RTP_NYC_2010_2019.mat')
-load('DAP_NYC_2010_2019.mat')
+load('RTP_LONGIL_2010_2019.mat')
+load('DAP_LONGIL_2010_2019.mat')
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
 DD = 365; % select days to look back
@@ -20,7 +20,7 @@ pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
 start = 2018;
 stop = 2018;
-location = 'NYC';
+location = 'LONGIL';
 
 % load case bias transition matrices
 if pindep == 1
@@ -75,14 +75,17 @@ for d = 1:DD
     for t = 1:Tp
         tp = (d-1)*Tp + t; % current time point
         tH = ceil((t)*Ts); % current hour
+        %% using previous time period bias （version A）
 %         if d == 1 && t == 1
 %             i = int32((Nb-1)/2);
 %         else
 %             i = int32((Nb-1)/2 + ceil(bias(tp-1)/Gb));
 %         end
+        %% using current time period bias （version B）
         i = int32((Nb-1)/2 + ceil(bias(tp)/Gb));
+        %%
         i = max(1,min(Nb,i));
-        eb = M(i,:,tH) * (ba+5);
+        eb = M(i,:,tH) * ba;
         lambda_DA_m(tp) = lambda_DA(tp) + eb;
     end
 end
