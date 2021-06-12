@@ -18,7 +18,7 @@ class DirStructure(object):
         DAP_folder="DAP_data",
         results_folder="transition_matrix",
         RTP_file = "RTP_NYC_2010_2019.mat",
-        t1 = datetime.datetime.strptime("01-01-2018", "%m-%d-%Y"),
+        t1 = datetime.datetime.strptime("01-01-2017", "%m-%d-%Y"),
         t2 = datetime.datetime.strptime("01-31-2018", "%m-%d-%Y"),
     ):
         self.BASE_DIRECTORY = code_directory
@@ -175,16 +175,19 @@ def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, DABias, **kw
         mn = 24
 
     sn = pb//sg + 2 # state number
-    bn = bb//bg * 2 + 1 # bias state number
+    bn = bb//bg * 2 + 2 # bias state number
     rtp = kw_dict['RTP'].loc[(start - zero_day).days - 2 : (end - zero_day).days - 2, :].copy().reset_index(drop=True) #slicing RTP data, -2 because 2 days missing in 2011 (MAR 01 an 02)
     dap = kw_dict['DAP'].loc[(start - zero_day).days : (end - zero_day).days, :].copy().reset_index(drop=True)
     bias = rtp - dap
-    bias = ((bias/bg).apply(np.ceil) + bb//bg - 1).astype(int)
+    Epbs = bias[bias>50].mean().mean() # expected positive bias spikes
+    Enbs = bias[bias<-50].mean().mean() # expected negative bias spikes
+    Ebspike = pd.DataFrame({'Epbs':[Epbs],'Enbs':[Enbs]})
+    Ebspike.to_csv(os.path.join(dir_structure.RESULTS_DIRECTORY,re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" +'expected_bias_spike.csv'),index=False)
+    bias = ((bias/bg).apply(np.ceil) + bb//bg).astype(int)
     bias = bias.clip(0,bn-1)
     bias['date'] = pd.date_range(start, end)
-    rtp = (rtp//sg+1).astype(int)
-    rtp[rtp < 0] = 0
-    rtp[rtp > sn - 2] = sn - 1
+    rtp = ((rtp/sg).apply(np.ceil) + 1).astype(int)
+    rtp = rtp.clip(0,sn-1)
     rtp['date'] = pd.date_range(start, end)
 
     if DABias:

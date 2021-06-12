@@ -12,7 +12,7 @@ G = 10; % state gap
 
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
-pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
+pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
 start = 2016;
@@ -67,7 +67,7 @@ c = 10; % marginal discharge cost - degradation
 ed = .001; % SoC sample granularity
 ef = .5; % final SoC target level, use 0 if none
 Ne = floor(1/ed)+1; % number of SOC samples
-e0 = .5;
+e0 = .0;
 
 vEnd = zeros(Ne,1);  % generate value function samples
 

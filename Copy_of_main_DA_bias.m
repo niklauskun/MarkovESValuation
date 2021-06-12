@@ -1,7 +1,8 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-load('RTP_NYC_2010_2019.mat')
-load('DAP_NYC_2010_2019.mat')
+location = 'NYC';
+load(strcat('RTP_',location,'_2010_2019.mat'))
+load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
 DD = 365; % select days to look back
@@ -10,17 +11,19 @@ lambda = reshape(RTP(:,(end-DD+1):end),numel(RTP(:,(end-DD+1):end)),1);
 lambda_DA = reshape(DAP(:,(end-DD+1):end),numel(DAP(:,(end-DD+1):end)),1); 
 bias = lambda - lambda_DA;
 T = numel(lambda); % number of time steps
-Nb = 11; % number of bias states (different from pre-processing, use number of states to prevent error)
+Nb = 12; % number of bias states (different from pre-processing, use number of states to prevent error)
 Gb = 10; % bias state gap
 
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
-pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
+pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2018;
+start = 2016;
 stop = 2018;
-location = 'NYC';
+
+%load expected bias spikes
+Ebs = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_expected_bias_spike.csv']));
 
 % load case bias transition matrices
 if pindep == 1
@@ -45,8 +48,8 @@ else
         M1 = zeros(Nb,Nb); % initialize the weekday transition matrices series
         M2 = zeros(Nb,Nb); % initialize the weekend transition matrices series
         for s = 1:totalMatrices % load matrices
-            M1(:,:,s) = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_',sprintf('%d',Gb),'_',sprintf('%d',Gb),'_','bias_matrix_weekday_',sprintf('%d',s-1),'.csv']));
-            M2(:,:,s) = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_',sprintf('%d',Gb),'_',sprintf('%d',Gb),'_','bias_matrix_weekend_',sprintf('%d',s-1),'.csv']));
+            M1(:,:,s) = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_',sprintf('%d',Gb),'_','bias_matrix_weekday_',sprintf('%d',s-1),'.csv']));
+            M2(:,:,s) = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_',sprintf('%d',Gb),'_','bias_matrix_weekend_',sprintf('%d',s-1),'.csv']));
         end
     else
         M1 = zeros(Nb,Nb); % initialize the summer weekday transition matrices series
@@ -102,70 +105,167 @@ iD = floor(eD/ed)+1;
 iD(iD > (Ne+1)) = Ne + 2;
 iD(iD < 2) = 1;
 % bias index
-ba = (-50:Gb:50)';
-% ba = (50:-Gb:-50)';
+ba = (-50-Gb/2:Gb:50+Gb/2)';
+ba(1) = Ebs(2);
+ba(end) = Ebs(1);
 
 %
 eS = zeros(T,1); % generate the SoC series
 pS = eS; % generate the power series
 e = e0; % initial SoC
 
-for d = DD:-1:1
-    %% valuation
-    q(:,:,end) = q(:,:,1);
-    for t = Tp:-1:1
-        tp = (d-1)*Tp + t; % current time point
-        tH = ceil((t)*Ts); % current hour
-        lambdaNode = lambda_DA(tp) + ba;
-%        qi = q(:,:,t+1);
-        for i = 1:Nb
-%             viE = 0;
-%             for j = 1:Nb
-            viE = (M(i,:,tH) * q(:,:,t+1)')'; % calculate expected value function from next timepoint at price node i
-%            end
-            qo = CalcValueNoUnc(lambdaNode(i), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
-%           maximum profit using the current bias discretization
-%             ii = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
-%             ii = max(1,min(Nb,ii));
-%             qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
-            q(:,i,t) = qo;
+if pindep == 0 && pseason == 1 && pweek == 0
+    for d = DD:-1:1
+        %% valuation
+        q(:,:,end) = q(:,:,1);
+        % calculate dates in given year
+        date = lastDay - days(DD-d); 
+        year_start = datetime(year(date),1,1);
+        day = days(date - year_start) + 1;
+        if 124 <= day && day <= 284
+            tM =M1;
+        else
+            tM =M2;
         end
+        % choose Markov model
+        for t = Tp:-1:1
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            lambdaNode = lambda_DA(tp) + ba;
+            for i = 1:Nb
+                viE = (tM(i,:,tH) * q(:,:,t+1)')'; % calculate expected value function from next timepoint at price node i
+                qo = CalcValueNoUnc(lambdaNode(i), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+%               maximum profit using the current bias discretization
+%               ii = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+%               ii = max(1,min(Nb,ii));
+%               qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+                q(:,i,t) = qo;
+            end
+            % value interpolation if have 0 probability node
+            if nnz(sum(tM(:,:,tH),2)) ~= Nb
+                for i = 1:Nb
+                    if sum(tM(i,:,tH))==0
+                        q(49:end,i,t) =NaN;
+                    end
+                end
+                q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
+            end
+        end
+        %% abitrage
+        for t = 1:Tp % start from the first day and move forwards
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+            i = max(1,min(Nb,i));
+            v(:,tp) = (tM(i,:,tH) * q(:,:,t+1)')';
+        end
+        fprintf('Day = %d\n', d)
     end
-      %% value interpolation
-%     for i = 1:Nb
-%         for t = 1:(1/Ts):Tp
-%             if sum(sum(v(49:end,i,t:t+11))) == 0
-%                 v(:,i,t:t+11) = NaN;
+elseif pindep == 0 && pseason == 0 && pweek == 1
+    for d = DD:-1:1
+        %% valuation
+        q(:,:,end) = q(:,:,1);
+        % calculate dates in given year
+        date = lastDay - days(DD-d); 
+        if isweekend(date) == 0
+            tM =M1;
+        else
+            tM =M2;
+        end
+        % choose Markov model
+        for t = Tp:-1:1
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            lambdaNode = lambda_DA(tp) + ba;
+            for i = 1:Nb
+                viE = (tM(i,:,tH) * q(:,:,t+1)')'; % calculate expected value function from next timepoint at price node i
+                qo = CalcValueNoUnc(lambdaNode(i), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+%               maximum profit using the current bias discretization
+%               ii = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+%               ii = max(1,min(Nb,ii));
+%               qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+                q(:,i,t) = qo;
+            end
+            % value interpolation if have 0 probability node
+%             if nnz(sum(tM(:,:,tH),2)) ~= Nb
+%                 for i = 1:Nb
+%                     if sum(tM(i,:,tH))==0
+%                         q(:,i,t) =NaN;
+%                     end
+%                 end
+%                 q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
 %             end
-%         end
-%         v(:,i,:) = fillmissing(v(:,i,:), 'nearest', 2);
-%     end
-    %% abitrage
-    % e = 0; % initialize SoC
-    for t = 1:Tp % start from the first day and move forwards
-        %choose transition matrix for timepoint t
-        tp = (d-1)*Tp + t; % current time point
-        tH = ceil((t)*Ts); % current hour
-        i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
-        i = max(1,min(Nb,i));
-%         i = Nb+1-max(1,min(Nb,i));
-%        for j = 1:Nb
-            v(:,tp) = (M(i,:,tH) * q(:,:,t+1)')';
-%        end
+        end
+        %% abitrage
+        for t = 1:Tp % start from the first day and move forwards
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+            i = max(1,min(Nb,i));
+            v(:,tp) = (tM(i,:,tH) * q(:,:,t+1)')';
+        end
+        fprintf('Day = %d\n', d)
     end
-    %% print result
-%     ProfitOut = ProfitOut + sum(pS.*lambda((d-1)*Tp+1:(d*Tp))) - sum(c*pS(pS>0));
-%     Revenue = Revenue + sum(pS.*lambda((d-1)*Tp+1:(d*Tp)));
-%     Discharge = Discharge+ sum(pS(pS>0));
-    fprintf('Day = %d\n', d)
-    %% Set final SoC value for next day
-%     vEnd = v(:,:,1);
-%     v = zeros(Ne,Nb,Tp+1);
-%     v(:,:,end) = vEnd;
-%     v(1:floor(ef*100),:,end) = 1e2;
+elseif pindep == 0 && pseason == 1 && pweek == 1
+    for d = DD:-1:1
+        %% valuation
+        q(:,:,end) = q(:,:,1);
+        for t = Tp:-1:1
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            lambdaNode = lambda_DA(tp) + ba;
+            for i = 1:Nb
+                viE = (tM(i,:,tH) * q(:,:,t+1)')'; % calculate expected value function from next timepoint at price node i
+                qo = CalcValueNoUnc(lambdaNode(i), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+%               maximum profit using the current bias discretization
+%               ii = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+%               ii = max(1,min(Nb,ii));
+%               qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+                q(:,i,t) = qo;
+            end
+        end  
+        %% abitrage
+        for t = 1:Tp % start from the first day and move forwards
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+            i = max(1,min(Nb,i));
+            v(:,tp) = (tM(i,:,tH) * q(:,:,t+1)')';
+        end
+        fprintf('Day = %d\n', d)
+    end
+else
+    for d = DD:-1:1
+        %% valuation
+        q(:,:,end) = q(:,:,1);
+        for t = Tp:-1:1
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            lambdaNode = lambda_DA(tp) + ba;
+            for i = 1:Nb
+                viE = (M(i,:,tH) * q(:,:,t+1)')'; % calculate expected value function from next timepoint at price node i
+                qo = CalcValueNoUnc(lambdaNode(i), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+%               maximum profit using the current bias discretization
+%               ii = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+%               ii = max(1,min(Nb,ii));
+%               qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
+                q(:,i,t) = qo;
+            end
+        end
+        %% abitrage
+        for t = 1:Tp % start from the first time period to last time period
+            tp = (d-1)*Tp + t; % current time point
+            tH = ceil((t)*Ts); % current hour
+            i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
+            i = max(1,min(Nb,i));
+            v(:,tp) = (M(i,:,tH) * q(:,:,t+1)')';
+        end
+        fprintf('Day = %d\n', d)
+    end
 end
 
-%%
+
+%% abitrage
 for d = 1:DD
     for t = 1:Tp % start from the first day and move forwards
         tp = (d-1)*Tp + t; % current time point
