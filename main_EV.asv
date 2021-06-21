@@ -1,7 +1,0 @@
-%% Case Setting
-addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
-
-location = 'NYC';
-load(strcat('RTP_',location,'_2010_2019.mat'))
-load(strcat('DAP_',location,'_2010_2019.mat'))
-

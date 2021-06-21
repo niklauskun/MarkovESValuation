@@ -6,7 +6,6 @@ load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
 DD = 1; % select days to look back
-lastDay = datetime(2019,12,31);
 lambda = reshape(RTP(:,(end-DD+1):end),numel(RTP(:,(end-DD+1):end)),1); 
 lambda_DA = reshape(DAP(:,(end-DD+1):end),numel(DAP(:,(end-DD+1):end)),1); 
 bias = lambda - lambda_DA;
@@ -40,7 +39,7 @@ e0 = .0;
 
 qEnd = zeros(Ne,Nb,1);  % generate value function samples
 
-qEnd(1:floor(ef*100),:) = 1e9; % use 100 as the penalty for final discharge level
+qEnd(1:floor(ef/ed)+1,:) = 1e9; % use 100 as the penalty for final discharge level
 
 %%
 tic

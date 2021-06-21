@@ -28,7 +28,7 @@ P = 1; # power rating MW
 # E = 2; # energy rating MWh
 eta = .9; # single-trip efficiency
 e0 = .0 * E;
-ef = .5 * E;
+ef = .8 * E;
 MC = 10; # marginal discharge cost
 
 # initialize optimization model
@@ -83,6 +83,7 @@ for n = (N_sim-0):(N_sim)
 
 # update prices
 local L = RTP[:,n]
+# local L = collect(1:288)
 local Lp = L .> 0
 
 # update prices in constraints
