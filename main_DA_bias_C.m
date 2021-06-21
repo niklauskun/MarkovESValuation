@@ -108,7 +108,7 @@ v(:,end) = q(:,1,end);
 for d = 1:DD
     for t = 1:Tp % start from the first day and move forwards
         tp = (d-1)*Tp + t; % current time point
-        [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+        [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
         eS(tp) = e; % record SoC
         pS(tp) = p; % record Power
     end

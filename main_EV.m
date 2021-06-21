@@ -105,7 +105,7 @@ for d = 1:optDay
     %% Opearation Valuation Period1
     for t = endPeriod1:-1:startPeriod1
         tp = (numDay+d-2)*Tp + t; % current time point
-        tH = ceil((t)*Ts)-24; % current hour
+        tH = ceil((t)*Ts); % current hour
         lambdaNode = lambda_DA(tp) + ba;
         for i = 1:Nb
             viE = (M(i,:,H(tH)) * q1(:,:,t+2-startPeriod1)')'; % calculate expected value function from next timepoint at price node i
@@ -120,14 +120,14 @@ for d = 1:optDay
     %% Arbitrage Period1
     for t = startPeriod1:endPeriod1
         tp = (numDay+d-2)*Tp + t; % current time point
-        tH = ceil((t)*Ts)-24; % current hour
+        tH = ceil((t)*Ts); % current hour
         i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
         i = max(1,min(Nb,i));
-        v(:,tp+1) = (M(i,:,H(tH)) * q1(:,:,t+2-startPeriod1)')';
+        v(:,tp) = (M(i,:,H(tH)) * q1(:,:,t+2-startPeriod1)')';
         if direction == 0
-            [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+            [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
         else
-            [e, p] =  Arb_Value(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+            [e, p] =  Arb_Value(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
         end
         eS(tp) = e; % record SoC
         pS(tp) = p; % record Power
@@ -137,7 +137,7 @@ for d = 1:optDay
         %% Opearation Valuation Period2
         for t = endPeriod2:-1:startPeriod2
             tp = (numDay+d-2)*Tp + t; % current time point
-            tH = ceil((t)*Ts)-24; % current hour
+            tH = ceil((t)*Ts); % current hour
             lambdaNode = lambda_DA(tp) + ba;
             for i = 1:Nb
                 viE = (M(i,:,H(tH)) * q2(:,:,t+2-startPeriod2)')'; % calculate expected value function from next timepoint at price node i
@@ -152,14 +152,14 @@ for d = 1:optDay
         %% Arbitrage Period2
         for t = startPeriod2:endPeriod2
             tp = (numDay+d-2)*Tp + t; % current time point
-            tH = ceil((t)*Ts)-24; % current hour
+            tH = ceil((t)*Ts); % current hour
             i = int32((Nb-1)/2 + ceil(bias(tp)/Gb)); % get price node i from lambda(t)
             i = max(1,min(Nb,i));
-            v(:,tp+1) = (M(i,:,H(tH)) * q2(:,:,t+2-startPeriod2)')';
+            v(:,tp) = (M(i,:,H(tH)) * q2(:,:,t+2-startPeriod2)')';
             if direction == 0
-                [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+                [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
             else
-                [e, p] =  Arb_Value(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+                [e, p] =  Arb_Value(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
             end
             eS(tp) = e; % record SoC
             pS(tp) = p; % record Power
