@@ -1,6 +1,6 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-location = 'NORTH';
+location = 'NYC';
 load(strcat('RTP_',location,'_2010_2019.mat'))
 load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
@@ -17,7 +17,7 @@ pindep = 0; % price independent, 1 -> True, 0 -> False
 pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2018;
+start = 2016;
 stop = 2018;
 
 %load expected price spikes
