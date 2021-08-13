@@ -177,6 +177,10 @@ def write_matrix_case(kw_dict, start, end, dir_structure, RTP_file, DABias, **kw
     sn = pb//sg + 2 # state number
     bn = bb//bg * 2 + 2 # bias state number
     rtp = kw_dict['RTP'].loc[(start - zero_day).days - 2 : (end - zero_day).days - 2, :].copy().reset_index(drop=True) #slicing RTP data, -2 because 2 days missing in 2011 (MAR 01 an 02)
+    Epps = rtp[rtp>pb].mean().mean() # expected positive bias spikes
+    Enps = rtp[rtp<0].mean().mean() # expected negative bias spikes
+    Epspike = pd.DataFrame({'Epps':[Epps],'Enps':[Enps]})
+    Epspike.to_csv(os.path.join(dir_structure.RESULTS_DIRECTORY,re.findall(r'_(.+?)_', RTP_file )[0] + "_" + str(start.year) + "_" + str(end.year) + "_" +'expected_price_spike.csv'),index=False)
     dap = kw_dict['DAP'].loc[(start - zero_day).days : (end - zero_day).days, :].copy().reset_index(drop=True)
     bias = rtp - dap
     Epbs = bias[bias>50].mean().mean() # expected positive bias spikes

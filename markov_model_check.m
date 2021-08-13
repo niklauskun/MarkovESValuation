@@ -1,7 +1,8 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-load('RTP_NYC_2010_2019.mat')
-load('DAP_NYC_2010_2019.mat')
+location = 'NYC';
+load(strcat('RTP_',location,'_2010_2019.mat'))
+load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
 Tp = 24/Ts; % number of timepoint
 DD = 365; % select days to look back
@@ -13,14 +14,20 @@ T = numel(lambda); % number of time steps
 Nb = 12; % number of bias states (different from pre-processing, use number of states to prevent error)
 Gb = 10; % bias state gap
 
+lambda_n = lambda(lambda<0);
+lambda_s = lambda(lambda>200); 
+bias_n = bias(bias>50); 
+bias_s = bias(bias<-50);
+std(bias_n);
+std(bias_s);
+
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
-pseason = 1; % price seasonal pattern, 1 -> True, 0 -> False
+pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
 start = 2018;
 stop = 2018;
-location = 'NYC';
 
 Ebs = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_expected_bias_spike.csv']));
 
@@ -64,40 +71,46 @@ else
     end
 end
 
-for h = 1:totalMatrices
-    zero = Nb - nnz(sum(M1(:,:,h),2));
-    fprintf('All zero transition probability at hour %d = %d \n', h, zero)
+% for h = 1:totalMatrices
+%     zero = Nb - nnz(sum(M1(:,:,h),2));
+%     fprintf('All zero transition probability at hour %d = %d \n', h, zero)
+% end
+
+
+% 
+ba = (-50-Gb/2:Gb:50+Gb/2)';
+ba(1) = Ebs(2);
+ba(end) = Ebs(1);
+lambda_DA_m = zeros(T,1);
+for d = 1:DD
+    for t = 1:Tp
+        tp = (d-1)*Tp + t; % current time point
+        tH = ceil((t)*Ts); % current hour
+        % using previous time period bias （version A）
+        if d == 1 && t == 1
+            i = int32((Nb-1)/2);
+        else
+            i = int32((Nb-1)/2 + ceil(bias(tp-1)/Gb));
+        end
+        % using current time period bias （version B）
+%         i = int32((Nb-1)/2 + ceil(bias(tp)/Gb));
+        %%
+        i = max(1,min(Nb,i));
+        eb = M(i,:,tH) * ba;
+        lambda_DA_m(tp) = lambda_DA(tp) + eb;
+    end
 end
 
+bias_m = lambda - lambda_DA_m;
 
-% 
-% ba = (-50-Gb/2:Gb:50+Gb/2)';
-% ba(1) = Ebs(2);
-% ba(end) = Ebs(1);
-% lambda_DA_m = zeros(T,1);
-% for d = 1:DD
-%     for t = 1:Tp
-%         tp = (d-1)*Tp + t; % current time point
-%         tH = ceil((t)*Ts); % current hour
-%         %% using previous time period bias （version A）
-%         if d == 1 && t == 1
-%             i = int32((Nb-1)/2);
-%         else
-%             i = int32((Nb-1)/2 + ceil(bias(tp-1)/Gb));
-%         end
-%         %% using current time period bias （version B）
-% %         i = int32((Nb-1)/2 + ceil(bias(tp)/Gb));
-%         %%
-%         i = max(1,min(Nb,i));
-%         eb = M(i,:,tH) * ba;
-%         lambda_DA_m(tp) = lambda_DA(tp) + eb;
-%     end
-% end
-% 
-% bias_m = lambda - lambda_DA_m;
-% 
 % plot(bias(1:2000))
 % hold on 
 % plot(bias_m(1:2000))
-% corrcoef(lambda_DA_m,lambda)
-% mean(bias_m)
+corrcoef(lambda_DA_m,lambda)
+mean(lambda)
+std(lambda)
+corrcoef(lambda_DA,lambda)
+lambda1 = lambda(2:end);
+lambda2 = lambda(1:end-1);
+corrcoef(lambda1,lambda2)
+

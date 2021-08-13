@@ -9,10 +9,10 @@ from pre_processing_functions import write_matrix_case
 # inputs for running
 folder_path = os.path.join(os.environ["HOMEPATH"], "Desktop")
 code_folder_path = "MarkovESValuation"
-start = datetime.datetime.strptime("01-01-2016", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to the two days missing in MAR 2021)
-end = datetime.datetime.strptime("12-31-2018", "%m-%d-%Y")  # day case ends on
-RTP_file = "RTP_NYC_2010_2019.mat"
-DAP_file = "DAP_NYC_2010_2019.mat"
+start = datetime.datetime.strptime("01-01-2019", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to the two days missing in MAR 2021)
+end = datetime.datetime.strptime("12-31-2019", "%m-%d-%Y")  # day case ends on
+RTP_file = "RTP_WEST_2010_2019.mat"
+DAP_file = "DAP_WEST_2010_2019.mat"
 DABias = True
 
 # create a file structure object
@@ -40,8 +40,8 @@ optional_kwargs = {
     "time_step": 12, # slices in one hour
     "price_bar": 200, # price greater than price bar is price spike
     "state_gap": 10, # state gap
-    "bias_bar": 50, # bias greater than 50 is gournded to 50 (smaller than -50 is grounded to -50)
-    "bias_gap": 5, # bias state gap
+    "bias_bar": 50, # bias greater than 50 is gournded to positive spike node (smaller than -50 is grounded to negative spike node)
+    "bias_gap": 10, # bias state gap
     "matrix_num": 24,
 }
 

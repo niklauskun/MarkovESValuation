@@ -24,11 +24,12 @@ L = RTP[:,1];
 Lp = L .> 0
 
 # BES setting
-P = 1; # power rating MW
+P = .5; # power rating MW
 # E = 2; # energy rating MWh
 eta = .9; # single-trip efficiency
 e0 = .0 * E;
-ef = .8 * E;
+ef = e0;
+# ef = .8 * E;
 MC = 10; # marginal discharge cost
 
 # initialize optimization model
@@ -56,8 +57,8 @@ set_silent(model) # no outputs
 # final energy level
 @constraint(model, Enelast, e[T] >= ef )
 # max discharge power
-# @constraint(model, DisMax[t=1:T], d[t] <= P*Lp[t] )
-@constraint(model, DisMax[t=1:T], d[t] == 0*Lp[t] )
+@constraint(model, DisMax[t=1:T], d[t] <= P*Lp[t] )
+# @constraint(model, DisMax[t=1:T], d[t] == 0*Lp[t] )
 # max charge power
 @constraint(model, ChrMax[t=1:T], c[t] <= P )
 # max energy level
@@ -77,8 +78,8 @@ C_s = zeros(1, N_sim)
 D_s = zeros(1, N_sim)
 
 @printf("Optimization starts...\n")
-# for n = (N_sim-364):(N_sim)
-for n = (N_sim-0):(N_sim)
+for n = (N_sim-364):(N_sim)
+# for n = (N_sim-0):(N_sim)
 
 
 # update prices
@@ -90,8 +91,8 @@ local Lp = L .> 0
 for t = 1:T
     set_normalized_coefficient(ArbRev, d[t], -M*L[t] )
     set_normalized_coefficient(ArbRev, c[t], M*L[t] )
-    # set_normalized_rhs(DisMax[t], P*Lp[t])
-    set_normalized_rhs(DisMax[t], 0*Lp[t])
+    set_normalized_rhs(DisMax[t], P*Lp[t])
+    # set_normalized_rhs(DisMax[t], 0*Lp[t])
 end
 
 

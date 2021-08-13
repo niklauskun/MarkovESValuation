@@ -1,6 +1,6 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-location = 'NYC';
+location = 'WEST';
 load(strcat('RTP_',location,'_2010_2019.mat'))
 load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
@@ -19,8 +19,8 @@ pindep = 0; % price independent, 1 -> True, 0 -> False
 pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2016;
-stop = 2018;
+start = 2019;
+stop = 2019;
 
 %load expected bias spikes
 Ebs = readmatrix(join([location,'_',sprintf('%d',start),'_',sprintf('%d',stop),'_expected_bias_spike.csv']));
@@ -187,14 +187,14 @@ elseif pindep == 0 && pseason == 0 && pweek == 1
                 q(:,i,t) = qo;
             end
             % value interpolation if have 0 probability node
-%             if nnz(sum(tM(:,:,tH),2)) ~= Nb
-%                 for i = 1:Nb
-%                     if sum(tM(i,:,tH))==0
-%                         q(:,i,t) =NaN;
-%                     end
-%                 end
-%                 q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
-%             end
+            if nnz(sum(tM(:,:,tH),2)) ~= Nb
+                for i = 1:Nb
+                    if sum(tM(i,:,tH))==0
+                        q(:,i,t) =NaN;
+                    end
+                end
+                q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
+            end
         end
         %% abitrage
         for t = 1:Tp % start from the first day and move forwards
@@ -271,7 +271,7 @@ end
 for d = 1:DD
     for t = 1:Tp % start from the first day and move forwards
         tp = (d-1)*Tp + t; % current time point
-        [e, p] =  Arb_Value(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
+        [e, p] =  Arb_Value(lambda(tp), v(:,tp), e, P, 1, eta, c, size(v,1));
 %         [e, p] =  Arb_Value_Charge(lambda(tp), v(:,tp+1), e, P, 1, eta, c, size(v,1));
         eS(tp) = e; % record SoC
         pS(tp) = p; % record Power
