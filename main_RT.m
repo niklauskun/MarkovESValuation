@@ -1,6 +1,6 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-location = 'NYC';
+location = 'LONGIL';
 load(strcat('RTP_',location,'_2010_2019.mat'))
 load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
@@ -71,11 +71,11 @@ c = 10; % marginal discharge cost - degradation
 ed = .001; % SoC sample granularity
 ef = .5; % final SoC target level, use 0 if none
 Ne = floor(1/ed)+1; % number of SOC samples
-e0 = .0;
+e0 = .5;
 
 qEnd = zeros(Ne,N,1);  % generate value function samples
 
-qEnd(1:floor(ef*100),:) = 1e2; % use 100 as the penalty for final discharge level
+qEnd(1:floor(ef*1000),:) = 1e2; % use 100 as the penalty for final discharge level
 % vEnd = zeros(Ne,1);  % generate value function samples
 % 
 % vEnd(1:floor(ef*100)) = 1e2; % use 100 as the penalty for final discharge level
@@ -237,14 +237,14 @@ else
                 %               qo = CalcValueNoUnc(lambdaNode(ii), c, P, eta, viE, ed, iC, iD);  % calculate value function at time point t and price node i
                 q(:,i,t) = qo;
             end
-            if nnz(sum(tM(:,:,tH),2)) ~= N
-                for i = 1:N
-                    if sum(tM(i,:,tH))==0
-                        q(49:end,i,t) =NaN;
-                    end
-                end
-                q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
-            end
+%             if nnz(sum(tM(:,:,tH),2)) ~= N
+%                 for i = 1:N
+%                     if sum(tM(i,:,tH))==0
+%                         q(49:end,i,t) =NaN;
+%                     end
+%                 end
+%                 q(:,:,t) = fillmissing(q(:,:,t),'nearest',2);
+%             end
         end
         %% abitrage
         for t = 1:Tp % start from the first time period to last time period

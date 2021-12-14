@@ -54,10 +54,10 @@ vD = v_foo(iD);
 % iDiFu = vD <= -lNum;
 
 % calculate CDF and PDF
-FtEC = (vi*eta > d); % F_t(v_t(e)*eta)
-FtCC = (vC*eta > d); % F_t(v_t(e+P*eta)*eta)
-FtED = ((vi/eta + c).*((vi/eta + c) > 0) > (d)); % F_t(v_t(e)/eta + c) 
-FtDD = ((vD/eta + c).*((vD/eta + c) > 0) > (d)); % F_t(v_t(e-P/eta)/eta + c) 
+FtEC = (vi.*eta(2:end-1) > d); % F_t(v_t(e)*eta)
+FtCC = (vC.*eta(2:end-1) > d); % F_t(v_t(e+P*eta)*eta)
+FtED = ((vi./eta(2:end-1) + c).*((vi./eta(2:end-1) + c) > 0) > (d)); % F_t(v_t(e)/eta + c) 
+FtDD = ((vD./eta(2:end-1) + c).*((vD./eta(2:end-1) + c) > 0) > (d)); % F_t(v_t(e-P/eta)/eta + c) 
 
 % ftEC = normpdf(vi*eta, mu, sigma); % f_t(v_t(e)*eta)
 % ftCC = normpdf(vC*eta, mu, sigma); % f_t(v_t(e+P*eta)*eta)
@@ -66,11 +66,12 @@ FtDD = ((vD/eta + c).*((vD/eta + c) > 0) > (d)); % F_t(v_t(e-P/eta)/eta + c)
 
 % calculate terms
 Term1 = vC .* FtCC;
-Term2 = (d/eta)* (FtEC - FtCC);
+% Term2 = (d/eta)* FtEC - FtCC);
+Term2 = (d./eta(2:end-1)).* FtEC - (d./eta(2:end-1)).* FtCC;
 Term3 = vi .* (FtED - FtEC);
 % Term4 = (d-c)*(((vi/eta ).*((vi/eta ) > 0)) <= (d-c)).*(((vD/eta ).*((vD/eta ) > 0))> (d-c)) * eta;
-Term4 = (d-c) * eta * (FtDD - FtED);
-Term5 = - c * eta * (FtDD - FtED)*0; % deleted 
+Term4 = (d-c) .* (FtDD .* eta(2:end-1) - FtED .* eta(2:end-1) );
+Term5 = - c .* eta(2:end-1) .* (FtDD - FtED).*0; % deleted 
 Term6 = vD .* (1-FtDD);
 
 

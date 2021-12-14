@@ -1,58 +1,58 @@
 %% Cases Comparison
-% X = categorical({'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
-% X = reordercats(X,{'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
-% Y1 = [45.12 59.37 60.97 58.45 57.82 69.89 70.29 69.15];
-% b = bar(X,Y1,'FaceColor','flat');
-% b.CData(2,:) = [0.8500 0.3250 0.0980];
-% b.CData(3,:) = [0.9290 0.6940 0.1250];
-% b.CData(4,:) = [0.4940 0.1840 0.5560];
-% b.CData(6,:) = [0.8500 0.3250 0.0980];
-% b.CData(7,:) = [0.9290 0.6940 0.1250];
-% b.CData(8,:) = [0.4940 0.1840 0.5560];
-% yline(100,'-','BEN-PF')
-% benda = yline(57.95,'--r','LineWidth',3);
-% benda.FontSize = 15;
-% set(gca,'yticklabel',{'0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','110%'})
-% legend(benda,'BEN-DA')
-% title('NYC Profit')
-% saveas(gcf,'pattern.png')
+X = categorical({'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
+X = reordercats(X,{'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
+Y1 = [50.14 61.73 62.61 60.33 62.94 71.98 72.36 72.03];
+b = bar(X,Y1,'FaceColor','flat');
+b.CData(2,:) = [0.8500 0.3250 0.0980];
+b.CData(3,:) = [0.9290 0.6940 0.1250];
+b.CData(4,:) = [0.4940 0.1840 0.5560];
+b.CData(6,:) = [0.8500 0.3250 0.0980];
+b.CData(7,:) = [0.9290 0.6940 0.1250];
+b.CData(8,:) = [0.4940 0.1840 0.5560];
+yline(100,'-','BEN-PF')
+benda = yline(61.92,'--r','LineWidth',3);
+benda.FontSize = 15;
+set(gca,'yticklabel',{'0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','110%'})
+legend(benda,'BEN-DA')
+title('NYC Profit')
+saveas(gcf,'pattern.png')
 
 %% Location/Data Size Comparison
 % X = categorical({'18-18','17-18','16-18'});
 % X = reordercats(X,{'18-18','17-18','16-18'});
-% Y1 = [58.44 69.71 58.90;59.55 69.05 57.74;59.37 69.89 57.82];
+% Y1 = [61.08 71.41 64.10;61.58 71.41 62.79;61.73 71.98 62.94];
 % b = bar(X,Y1,'FaceColor','flat');
-% l1 = yline(57.95,'--r','LineWidth',3);
+% l1 = yline(61.92,'--r','LineWidth',3);
 % l2 = yline(100,'--');
 % set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 20)
 % legend('RT-Dep','DB-Dep','DB-Idp','BEN-DA','FontSize', 18, 'Orientation','horizontal','NumColumns',2)
 % saveas(gcf,[pwd '\pictures\NYC.png'])
-
+% 
 % X = categorical({'18-18','17-18','16-18'});
 % X = reordercats(X,{'18-18','17-18','16-18'});
-% Y1 = [64.85 62.31 51.92;64.87 63.15 51.84;63.60 63.02 52.35];
+% Y1 = [66.58 64.86 56.30;66.93 65.06 55.98;66.33 65.07 56.75];
 % b = bar(X,Y1,'FaceColor','flat');
-% l1 = yline(56.92,'--r','LineWidth',3);
+% l1 = yline(59.15,'--r','LineWidth',3);
 % l2 = yline(100,'--');
 % set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 20)
 % legend('RT-Dep','DB-Dep','DB-Idp','BEN-DA','FontSize', 18, 'Orientation','horizontal','NumColumns',2)
 % saveas(gcf,[pwd '\pictures\LONGIL.png'])
-
+% 
 % X = categorical({'18-18','17-18','16-18'});
 % X = reordercats(X,{'18-18','17-18','16-18'});
-% Y1 = [59.93 73.06 71.44;63.17 73.26 70.90;64.13 73.36 70.49];
+% Y1 = [58.66 73.49 74.03;61.83 74.03 73.44;63.00 74.59 72.93];
 % b = bar(X,Y1,'FaceColor','flat');
-% l1 = yline(60.11,'--r','LineWidth',3);
+% l1 = yline(65.14,'--r','LineWidth',3);
 % l2 = yline(100,'--');
 % set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 20)
 % legend('RT-Dep','DB-Dep','DB-Idp','BEN-DA','FontSize', 18, 'Orientation','horizontal','NumColumns',2)
 % saveas(gcf,[pwd '\pictures\NORTH.png'])
-
+% 
 % X = categorical({'18-18','17-18','16-18'});
 % X = reordercats(X,{'18-18','17-18','16-18'});
-% Y1 = [74.82 76.83 71.42;74.81 76.90 71.14;74.49 75.79 70.84];
+% Y1 = [75.83 78.17 73.76;75.89 78.56 73.80;75.42 77.34 73.36];
 % b = bar(X,Y1,'FaceColor','flat');
-% l1 = yline(69.86,'--r','LineWidth',3);
+% l1 = yline(72.68,'--r','LineWidth',3);
 % l2 = yline(100,'--');
 % set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 20)
 % legend('RT-Dep','DB-Dep','DB-Idp','BEN-DA','FontSize', 18, 'Orientation','horizontal','NumColumns',2)

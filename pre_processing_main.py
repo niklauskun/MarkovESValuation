@@ -13,7 +13,7 @@ start = datetime.datetime.strptime("01-01-2019", "%m-%d-%Y")  # day case starts 
 end = datetime.datetime.strptime("12-31-2019", "%m-%d-%Y")  # day case ends on
 RTP_file = "RTP_WEST_2010_2019.mat"
 DAP_file = "DAP_WEST_2010_2019.mat"
-DABias = True
+DABias = True # Train Markov process model for real-time model (Flase) or DAP-RTP bias model (True)
 
 # create a file structure object
 f = DirStructure(

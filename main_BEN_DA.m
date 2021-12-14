@@ -1,7 +1,11 @@
+addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 load('RTP_NYC_2010_2019.mat')
 load('DAP_NYC_2010_2019.mat')
 Ts = 1/12; % time step
 DD = 365; % select days to look back
+% Ystart = 2017; % start year
+% Yend = 2018; % end year
+% lambda = reshape(RTP(:,(end-(2020-Ystart)*365+1):(end-(2019-Yend)*365)),numel(RTP(:,(end-(2020-Ystart)*365+1):(end-(2019-Yend)*365))),1);
 lambda = reshape(RTP(:,(end-DD):end),numel(RTP(:,(end-DD):end)),1); 
 lambda_DA = reshape(DAP(:,(end-DD):end),numel(DAP(:,(end-DD):end)),1); 
 T = numel(lambda); % number of time steps
@@ -18,7 +22,7 @@ e0 = .5;
 
 vEnd = zeros(Ne,1);  % generate value function samples
 
-vEnd(1:floor(ef*100)) = 1e2; % use 100 as the penalty for final discharge level
+vEnd(1:floor(ef*1000)) = 1e2; % use 100 as the penalty for final discharge level
 
 
 %%
@@ -46,18 +50,18 @@ iD(iD < 2) = 1;
 
 for t = T:-1:1 % start from the last day and move backwards
     vi = v(:,t+1); % input value function from tomorrow
-    vo = CalcValueNoUnc(lambda_DA(t), c, P, eta, vi, ed, iC, iD);
+    vo = CalcValueNoUnc(lambda(t), c, P, eta, vi, ed, iC, iD);
     v(:,t) = vo; % record the result 
 end
 
 tElasped = toc;
 
 %% convert value function to 5 segments
-vAvg = zeros(5,T+1);
+vAvg = zeros(20,T+1);
 
-NN = (Ne-1)/5;
+NN = (Ne-1)/20;
 
-for i = 1:5
+for i = 1:20
    vAvg(i,:) = mean(v((i-1)*NN + (1:(NN+1)),:)); 
 end
 
@@ -70,6 +74,9 @@ e = e0; % initial SoC
 
 for t = 1:T % start from the first day and move forwards
     vv = v(:,t+1); % read the SoC value for this day
+    
+    % look up index of current e
+    
    [e, p] =  Arb_Value(lambda(t), vv, e, P, 1, eta, c, size(v,1));
    eS(t) = e; % record SoC
    pS(t) = p; % record Power

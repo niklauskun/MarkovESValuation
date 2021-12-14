@@ -28,11 +28,11 @@ Use pre_processing_main.py:
 4. Other settings are in line 37 (optional_kwargs), set summer duration, time step, price nodes gap and upper/lower bounds.
 
 ### Real-time arbitrage with real-time Markov process model
-For real-time Markov model, Uuse main.m; for DAP-RTP bias Markov process model use main_DA_bias.m:
+For real-time Markov model, Uuse main_RT.m; for DAP-RTP bias Markov process model use main_DA_bias.m:
 
 Set location, price node number and gap and cases (base, independent, with seasonal/weekly pattern), and Markov model training dataset in line 1-23.
 
-Power-to-energy ratio (P/E), efficiency, presumed marginal discharge cost can be set in line 67-74 (main.m)/line  69-76 (main_DA_bias.m).
+Power-to-energy ratio (P/E), efficiency, presumed marginal discharge cost can be set in line 67-74 (main_RT.m)/line  69-76 (main_DA_bias.m).
 
 ### Benchmark simulation
 For day-ahead benchmark (BEN-DA), use main_BEN_DA.m;
