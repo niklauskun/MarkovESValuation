@@ -37,4 +37,4 @@ Power-to-energy ratio (P/E), efficiency, presumed marginal discharge cost can be
 ### Benchmark simulation
 For day-ahead benchmark (BEN-DA), use main_BEN_DA.m;
 
-For perfect information benchmark, use test_arb.jl.
+For perfect information benchmark, use test_arb.jl. Similar result can be obtained by change lambda(t) to lambda_DA(t) in main_BEN_DA.m, Line 49.
