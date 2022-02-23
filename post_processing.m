@@ -1,21 +1,21 @@
 %% Cases Comparison
-X = categorical({'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
-X = reordercats(X,{'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
-Y1 = [50.14 61.73 62.61 60.33 62.94 71.98 72.36 72.03];
-b = bar(X,Y1,'FaceColor','flat');
-b.CData(2,:) = [0.8500 0.3250 0.0980];
-b.CData(3,:) = [0.9290 0.6940 0.1250];
-b.CData(4,:) = [0.4940 0.1840 0.5560];
-b.CData(6,:) = [0.8500 0.3250 0.0980];
-b.CData(7,:) = [0.9290 0.6940 0.1250];
-b.CData(8,:) = [0.4940 0.1840 0.5560];
-yline(100,'-','BEN-PF')
-benda = yline(61.92,'--r','LineWidth',3);
-benda.FontSize = 15;
-set(gca,'yticklabel',{'0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','110%'})
-legend(benda,'BEN-DA')
-title('NYC Profit')
-saveas(gcf,'pattern.png')
+% X = categorical({'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
+% X = reordercats(X,{'RT-Idp','RT-Dep','RT-Dep-S','RT-Dep-W','DB-Idp','DB-Dep','DB-Dep-S','DB-Dep-W'});
+% Y1 = [55.14 61.73 62.61 60.33 62.94 71.98 72.36 72.03];
+% b = bar(X,Y1,'FaceColor','flat');
+% b.CData(2,:) = [0.8500 0.3250 0.0980];
+% b.CData(3,:) = [0.9290 0.6940 0.1250];
+% b.CData(4,:) = [0.4940 0.1840 0.5560];
+% b.CData(6,:) = [0.8500 0.3250 0.0980];
+% b.CData(7,:) = [0.9290 0.6940 0.1250];
+% b.CData(8,:) = [0.4940 0.1840 0.5560];
+% yline(100,'-','BEN-PF')
+% benda = yline(61.92,'--r','LineWidth',3);
+% benda.FontSize = 15;
+% set(gca,'yticklabel',{'0%','10%','20%','30%','40%','50%','60%','70%','80%','90%','100%','110%'})
+% legend(benda,'BEN-DA')
+% title('NYC Profit')
+% saveas(gcf,'pattern.png')
 
 %% Location/Data Size Comparison
 % X = categorical({'18-18','17-18','16-18'});
@@ -199,3 +199,58 @@ saveas(gcf,'pattern.png')
 % lg  = legend('Positive Cor','Negative Cor','Num of Positive','Num of Negative','Orientation','Horizontal');
 % lg.Layout.Tile = 'South';
 % saveas(gcf,[pwd '\pictures\pcor.png'])
+
+%% variale efficiency comparison
+% X = categorical({'NYC','LONGIL','NORTH','WEST'});
+% X = reordercats(X,{'NYC','LONGIL','NORTH','WEST'});
+% Y1 = [70.17	69.29;62.28 61.23;75.52 75.04;74.35 74.05];
+% b = bar(X,Y1,'FaceColor','flat');
+% l2 = yline(100,'--');
+% set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 16)
+% legend('variable','constant','FontSize', 18, 'Orientation','horizontal','NumColumns',2)
+
+%% sensitivity analysis
+
+% X = categorical([5 10 20]);
+% Y1 = [72.70 72.25 69.36];
+% Y2 =[91.8964542 41.97127405 18.85504543];
+% yyaxis left
+% bar(X,Y1,'FaceColor','flat','BarWidth', 0.2);
+% xlabel("Gap of Price Node ($/MWh)")
+% ylabel("Avg Profit Captured")
+% ylim([0 100])
+% set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 16)
+% yyaxis right
+% plot(X,Y2,'LineWidth',3);
+% ylabel("Avg Solved Time (s)")
+% saveas(gcf,[pwd '\pictures\saprice.pdf'])
+
+
+% X = categorical([10 25 50 100 500 1000 2000 5000 10000]);
+% Y1 = [18.49 19.19 74.73 74.09 72.68 72.30 72.18 72.06 72.04];
+% Y2 =[17.44987028 18.07312013 18.78381318 20.03658153 34.08325968 50.42909755 85.39690418 232.8555171 400.0769968 ];
+% yyaxis left
+% bar(X,Y1,'FaceColor','flat','BarWidth', 0.4);
+% xlabel("Number of SoC Segments")
+% ylabel("Avg Profit Captured")
+% ylim([0 100])
+% set(gca,'yticklabel',{'0%','20%','40%','60%','80%','100%'},'FontSize', 16)
+% yyaxis right
+% plot(X,Y2,'LineWidth',3);
+% ylabel("Avg Solved Time (s)")
+% saveas(gcf,[pwd '\pictures\sasoc.pdf'])
+
+%% variale efficiency comparison
+% X = categorical({'Cons\_LP','Cons\_DP','Var\_MILP','Var\_DP'});
+% X = reordercats(X,{'Cons\_LP','Cons\_DP','Var\_MILP','Var\_DP'});
+% Y1 = [17.94725;18.6286275;17.365;17.351];
+% Y2 = [3.65520125;4.85435;39.73383425;3.79335];
+% yyaxis left
+% bar(X,Y1,'FaceColor','flat');
+% ylim([0 25])
+% ylabel("Avg profit (k$)")
+% set(gca,'FontSize', 16)
+% yyaxis right
+% scatter(X,Y2,100,'filled');
+% ylim([0 50])
+% ylabel("Avg Solved Time (s)")

@@ -9,8 +9,8 @@ from pre_processing_functions import write_matrix_case
 # inputs for running
 folder_path = os.path.join(os.environ["HOMEPATH"], "Desktop")
 code_folder_path = "MarkovESValuation"
-start = datetime.datetime.strptime("01-01-2019", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to NYISO has two days missing in MAR 2021)
-end = datetime.datetime.strptime("12-31-2019", "%m-%d-%Y")  # day case ends on
+start = datetime.datetime.strptime("01-01-2016", "%m-%d-%Y")  # day case starts on, (needs to be greater than 03-03-2011, due to NYISO has two days missing in MAR 2021)
+end = datetime.datetime.strptime("12-31-2018", "%m-%d-%Y")  # day case ends on
 RTP_file = "RTP_WEST_2010_2019.mat"
 DAP_file = "DAP_WEST_2010_2019.mat"
 DABias = True # Train Markov process model for real-time model (Flase) or DAP-RTP bias model (True)
@@ -41,7 +41,7 @@ optional_kwargs = {
     "price_bar": 200, # price greater than price bar is price spike
     "state_gap": 10, # state gap
     "bias_bar": 50, # bias greater than 50 is gournded to positive spike node (smaller than -50 is grounded to negative spike node)
-    "bias_gap": 10, # bias state gap
+    "bias_gap": 25, # bias state gap
     "matrix_num": 24,
 }
 

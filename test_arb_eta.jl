@@ -125,8 +125,11 @@ soc1 = zeros(288, N_sim)
 soc2 = zeros(288, N_sim)
 soc3 = zeros(288, N_sim)
 
+@time begin
+
+
 @printf("Optimization starts...\n")
-for n = (N_sim-364):(N_sim)
+for n = (N_sim-365):(N_sim)
 # for n = (N_sim-0):(N_sim)
 
 
@@ -162,16 +165,16 @@ termination_status(model)
 
 
 end
-
+end
 # save three segment dispatch
-SoC1 = vec(reshape(soc1[:,(N_sim-364):(N_sim)],(105120,1)))
-SoC2 = vec(reshape(soc2[:,(N_sim-364):(N_sim)],(105120,1)))
-SoC3 = vec(reshape(soc3[:,(N_sim-364):(N_sim)],(105120,1)))
-df2 = DataFrame(SoC1 = SoC1, SoC2 = SoC2, SoC3 = SoC3)
-CSV.write("SoC_eta.csv", df2)
-
-# save optimal dispatch to csv
-charge = vec(reshape(C_v[:,(N_sim-364):(N_sim)],(105120,1)))
-discharge = vec(reshape(D_v[:,(N_sim-364):(N_sim)],(105120,1)))
-df = DataFrame(Charge = charge, Discharge = discharge)
-CSV.write("dispatch_PI.csv", df)
+# SoC1 = vec(reshape(soc1[:,(N_sim-364):(N_sim)],(105120,1)))
+# SoC2 = vec(reshape(soc2[:,(N_sim-364):(N_sim)],(105120,1)))
+# SoC3 = vec(reshape(soc3[:,(N_sim-364):(N_sim)],(105120,1)))
+# df2 = DataFrame(SoC1 = SoC1, SoC2 = SoC2, SoC3 = SoC3)
+# CSV.write("SoC_eta.csv", df2)
+#
+# # save optimal dispatch to csv
+# charge = vec(reshape(C_v[:,(N_sim-364):(N_sim)],(105120,1)))
+# discharge = vec(reshape(D_v[:,(N_sim-364):(N_sim)],(105120,1)))
+# df = DataFrame(Charge = charge, Discharge = discharge)
+# CSV.write("dispatch_PI.csv", df)

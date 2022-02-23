@@ -1,6 +1,14 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-location = 'NYC';
+locations = convertStringsToChars(["NYC","LONGIL","NORTH","WEST"]);
+profit_tests = zeros(length(locations),1);
+profit_tests_r = zeros(length(locations),1);
+profit_tests_d = zeros(length(locations),1);
+time_tests = zeros(length(locations),1);
+
+for ii = 1:4
+location = locations{ii};
+% location = 'NYC';
 load(strcat('RTP_',location,'_2010_2019.mat'))
 load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
@@ -11,8 +19,8 @@ lambda = reshape(RTP(:,(end-DD+1):end),numel(RTP(:,(end-DD+1):end)),1);
 lambda_DA = reshape(DAP(:,(end-DD+1):end),numel(DAP(:,(end-DD+1):end)),1); 
 bias = lambda - lambda_DA;
 T = numel(lambda); % number of time steps
-Nb = 12; % number of bias states (different from pre-processing, use number of states to prevent error)
-Gb = 10; % bias state gap
+Nb = 6; % number of bias states (different from pre-processing, use number of states to prevent error)
+Gb = 25; % bias state gap
 
 %% load transition matrices
 pindep = 0; % price independent, 1 -> True, 0 -> False
@@ -287,6 +295,13 @@ fprintf('Profit = %e, Revenue = %e, Discharged = %e\n', ProfitOut, Revenue, Disc
 
 solTimeOut = toc;
 
+profit_tests(ii) = ProfitOut;
+profit_tests_r(ii) = Revenue;
+profit_tests_d(ii) = Discharge;
+
+time_tests(ii) = solTimeOut;
+
+end
 % % save price and dispatch as csv
 % Table1 = array2table([lambda_DA lambda]);
 % Table1.Properties.VariableNames(1:2) = {'DAP','RTP'};
