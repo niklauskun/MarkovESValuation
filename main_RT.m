@@ -1,6 +1,14 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
 
-location = 'LONGIL';
+locations = convertStringsToChars(["NYC","LONGIL","NORTH","WEST"]);
+profit_tests = zeros(length(locations),1);
+profit_tests_r = zeros(length(locations),1);
+profit_tests_d = zeros(length(locations),1);
+time_tests = zeros(length(locations),1);
+
+for ii = 1:4
+location = locations{ii};
+% location = 'NYC';
 load(strcat('RTP_',location,'_2010_2019.mat'))
 load(strcat('DAP_',location,'_2010_2019.mat'))
 Ts = 1/12; % time step
@@ -13,11 +21,11 @@ N = 22; % number of states
 G = 10; % state gap
 
 %% load transition matrices
-pindep = 0; % price independent, 1 -> True, 0 -> False
+pindep = 1; % price independent, 1 -> True, 0 -> False
 pseason = 0; % price seasonal pattern, 1 -> True, 0 -> False
 pweek = 0; % price week pattern, 1 -> True, 0 -> False
 totalMatrices = 24; %total matrices number in each day
-start = 2016;
+start = 2017;
 stop = 2018;
 
 %load expected price spikes
@@ -75,7 +83,7 @@ e0 = .5;
 
 qEnd = zeros(Ne,N,1);  % generate value function samples
 
-qEnd(1:floor(ef*1000),:) = 1e2; % use 100 as the penalty for final discharge level
+qEnd(1:floor(ef*Ne),:) = 1e2; % use 100 as the penalty for final discharge level
 % vEnd = zeros(Ne,1);  % generate value function samples
 % 
 % vEnd(1:floor(ef*100)) = 1e2; % use 100 as the penalty for final discharge level
@@ -279,6 +287,12 @@ fprintf('Profit = %e, Revenue = %e, Discharged = %e\n', ProfitOut, Revenue, Disc
 
 solTimeOut = toc;
 
+profit_tests(ii) = ProfitOut;
+profit_tests_r(ii) = Revenue;
+profit_tests_d(ii) = Discharge;
+
+time_tests(ii) = solTimeOut;
+end
 % for t = Tp:-1:1 % start from the last timepoint and move backwards
 %     if pindep == 0 && ((pseason == 1 && pweek == 0) || (pseason == 0 && pweek == 1))
 %         %choose transition matrix for timepoint t

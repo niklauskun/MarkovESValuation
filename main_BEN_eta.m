@@ -1,5 +1,5 @@
 addpath(genpath('C:\Users\wenmi\Desktop\MarkovESValuation'))
-load('RTP_LONGIL_2010_2019.mat')
+load('RTP_WEST_2010_2019.mat')
 load('DAP_NYC_2010_2019.mat')
 Ts = 1/12; % time step
 DD = 365; % select days to look back
@@ -11,7 +11,7 @@ lambda_DA = reshape(DAP(:,(end-DD):end),numel(DAP(:,(end-DD):end)),1);
 T = numel(lambda); % number of time steps
 
 %%
-consteta = 1; % 0 - variable eata, 1 - constant eta
+consteta = 0; % 0 - variable eata, 1 - constant eta
 Pr = .5; % normalized power rating wrt energy rating
 P = Pr*Ts; % actual power rating taking time step size into account
 c = 10; % marginal discharge cost - degradation
